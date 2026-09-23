@@ -1,0 +1,68 @@
+[
+  {
+    "input": {
+      "question": "How many orders are recorded? Use all recorded data; an order is one row in orders. Return only the integer, with no explanation or Markdown."
+    },
+    "output": {"answer": 100},
+    "metadata": {"id": "q1", "difficulty": "elementary"}
+  },
+  {
+    "input": {
+      "question": "What is the total revenue across all recorded orders? Revenue is SUM(quantity * unit_price), in USD. Round to two decimal places. Return only the number, with no currency symbol, explanation, or Markdown."
+    },
+    "output": {"answer": 716.50},
+    "metadata": {"id": "q2", "difficulty": "elementary"}
+  },
+  {
+    "input": {
+      "question": "For each category, report its order count, units sold, and revenue across all recorded orders. An order is one row in orders; units sold is SUM(quantity); revenue is SUM(quantity * unit_price), in USD. Sort alphabetically by category and round revenue to two decimal places. Return only a JSON array of objects with exactly these keys: category (string), order_count (integer), units_sold (integer), revenue (number). Do not include an explanation or Markdown fences."
+    },
+    "output": {
+      "answer": [
+        {"category": "Coffee", "order_count": 38, "units_sold": 57, "revenue": 250.50},
+        {"category": "Pastries", "order_count": 29, "units_sold": 53, "revenue": 204.50},
+        {"category": "Tea", "order_count": 33, "units_sold": 50, "revenue": 261.50}
+      ]
+    },
+    "metadata": {"id": "q3", "difficulty": "intermediate"}
+  },
+  {
+    "input": {
+      "question": "Which three products generated the most revenue across all recorded orders? Return their names and revenue, ranked highest first. Revenue is SUM(quantity * unit_price), in USD. Rank using unrounded revenue and break ties by lower product ID; round the returned revenue to two decimal places. Return only a JSON array of objects with exactly these keys: name (string), revenue (number). Do not include an explanation or Markdown fences."
+    },
+    "output": {
+      "answer": [
+        {"name": "Latte", "revenue": 170.00},
+        {"name": "Croissant", "revenue": 152.00},
+        {"name": "Chai Latte", "revenue": 135.00}
+      ]
+    },
+    "metadata": {"id": "q4", "difficulty": "intermediate"}
+  },
+  {
+    "input": {
+      "question": "Which products sold at least 20 units and have an average review rating strictly below 2? Use all recorded orders and reviews. Units sold is SUM(quantity), counting each order once, and average ratings weight each review equally. Apply thresholds before rounding. Report every qualifying product's name, units sold, and average rating, ordered alphabetically by product name. Round returned average ratings to two decimal places. Return only a JSON array of objects with exactly these keys: name (string), units_sold (integer), average_rating (number). Do not include an explanation or Markdown fences."
+    },
+    "output": {
+      "answer": [
+        {"name": "Chai Latte", "units_sold": 27, "average_rating": 1.00},
+        {"name": "Latte", "units_sold": 34, "average_rating": 1.80},
+        {"name": "Matcha Latte", "units_sold": 23, "average_rating": 1.50}
+      ]
+    },
+    "metadata": {"id": "q5", "difficulty": "advanced"}
+  },
+  {
+    "input": {
+      "question": "For each category, report total revenue and the percentage of all reviews in that category rated 1 or 2. Use all recorded orders and reviews, counting each order and each review once. Revenue is SUM(quantity * unit_price), in USD. The review percentage is 100 times the number of reviews rated 1 or 2 divided by the total number of reviews in that category, weighting each review equally. Sort alphabetically by category. Round revenue and percentages to two decimal places; express percentages on a 0–100 scale. Return only a JSON array of objects with exactly these keys: category (string), revenue (number), low_rating_percentage (number). Do not include an explanation or Markdown fences."
+    },
+    "output": {
+      "answer": [
+        {"category": "Coffee", "revenue": 250.50, "low_rating_percentage": 55.56},
+        {"category": "Pastries", "revenue": 204.50, "low_rating_percentage": 0.00},
+        {"category": "Tea", "revenue": 261.50, "low_rating_percentage": 100.00}
+      ]
+    },
+    "metadata": {"id": "q6", "difficulty": "advanced"}
+  }
+]
