@@ -1,4 +1,5 @@
 from database import execute_query
+from tracing import tracer
 
 TOOL_DEFINITIONS = [
     {
@@ -28,6 +29,7 @@ TOOL_DEFINITIONS = [
 ]
 
 
+@tracer.tool
 def get_schema():
     return execute_query("""
         SELECT name, sql FROM sqlite_master
@@ -36,5 +38,6 @@ def get_schema():
     """)
 
 
+@tracer.tool
 def run_sql(sql):
     return execute_query(sql)
