@@ -1,8 +1,17 @@
-# Applying Phoenix to identify which new GPT-6 model is right
+# Comparing the new family of GPT-6 models using Phoenix
 
-As of today (September 22nd), OpenAI has expanded their GPT-6 family to include Luna and Sol, alongside Astra. These models provide many of the same advances as Astra, while providing cheaper compute, as shown on their benchmarks. While general benchmarks released provide some insight for what may meet one's demands, no benchmark can be personal enough. 
+As of September 22nd, OpenAI has expanded their GPT-6 family, [launching Luna and Sol](https://openai.com/index/introducing-gpt-6-sol-and-luna/), expanding around their flagship Astra model. These two new models provide many of the same advances as Astra at a cheaper price, with the launch page showing impressive results from many general benchmarks. 
 
-My project will be framed around using these new models in an agentic environment with provided tools to answer how well this model helps one's specific workflow. I chose a specific question to simulate being a consumer trying to assess model practicality for a business-need.
+With such an expansion comes freedom of choice, and therefore, many will wonder which model is right for them. While all three models share similarities, they can also differ significantly. For example, `gpt-6-luna` appears to be around 10x cheaper than `gpt-6-astra` in API costs. Benchmarks may also be unreliable or misleading, especially when showcased on a company's launch page. Lastly, on the day of a model's launch, limited information is available about the model itself.
+
+All of these concerns I mention greatly illuminates the value in being able to devise your own model benchmarks within your specialized use-case. This write-up simulates the perspective of a coffee shop owner who wishes to assess the newly-released model's performance under their personal workflow.
+
+## Project: Analyzing a coffee shop's sales
+
+<img src="images/art.png" width="300">
+
+
+
 
 ## Outline
 
@@ -48,6 +57,19 @@ Phoenix will run a deterministic Python evaluator that compares the agent's stru
 | Explanation | Why the answer passed or failed |
 
 I'll compare accuracy overall and by difficulty tier, alongside latency, tokens, cost, and tool calls per question. Evaluator failures will be reported separately from incorrect agent answers. Tool-call counts measure usage, not correctness: fewer calls are only useful if the answer is still right.
+
+## Running experiments
+
+```sh
+python experiment.py --models gpt-6-luna gpt-6-sol gpt-6-astra
+
+# or alternatively, run models independently
+python experiment.py --models gpt-6-luna
+python experiment.py --models gpt-6-sol
+python experiment.py --models gpt-6-astra
+```
+
+
 
 ## File structure
 
