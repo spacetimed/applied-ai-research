@@ -15,15 +15,15 @@ A **coffee shop owner** tends to use AI agents through OpenAI's API to analyze t
 
 I've chronologically documented my process of addressing this question, demonstrating how Phoenix greatly aids the process, while pointing out some challenges I've faced throughout. The [Results](#results) section compresses the experiment's results, and highlights what I've learned.
 
-## Phase 1: Getting started
+## Designing the experiment
 
-My first **challenge** was decomposing this question, and actually design an experiment. I began by asking:
+My first **challenge** was decomposing the proposed research question and designing an experiment to assess it. I began by asking:
 
 ***What are we comparing?***
 
 The only independent variable in this experiment is the model itself (`gpt-6-luna`, `gpt-6-sol`, `gpt-6-astra`). For the sake of comparison, all other variables (reasoning effort, prompt, available tools) remain the same.
 
-***What are we measuring?***: Cost, correctness, latency, tools, tokens
+***What are we measuring?*** Cost, correctness, latency, tools, tokens
 
 | Category | Metric name as revealed by Phoenix | 
 | --- | --- |
@@ -35,72 +35,57 @@ The only independent variable in this experiment is the model itself (`gpt-6-lun
 
 ***What defines correctness?***
 
-For evaluating correctness, 6 questions within 3 categories (beginner, intermediate, advanced) will be asked to the agent about the data, and responses will be compared to expected output. 
+For evaluating correctness, 6 questions within 3 categories (beginner, intermediate, advanced) will be asked to the agent about the coffee shop's sales data, and responses will be compared to expected output. 
 
 ⭐️ *Full details about the questions asked are in the [Evaluation Questions](#evaluation-questions) section.*
 
-***What data should my shop use?***
+***Where can I find accurate sales data for a coffee shop?***
 
 Most of the datasets I could find online were pretty dramatic in scope—either too specialized, too reduced, or just confusing. I wanted data rich enough for the agent to work with, but simple enough to not detract from the demo's focus.
 
 I decided the cleanest approach here would be to devise my own mock dataset, containing 3 tables: `products`, `orders`, and `reviews`. In terms of generating reviews, this also provides me a nicely contained environment to begin using OpenAI's API. 
+Inside `helpers/build_dataset.py`, I bulit a small helper script which allowed me to dynamically define a few product entries, and populate the table according to some variables I choose (order count, review count). 
 
-Inside `helpers/build_dataset.py`, I bulit a small helper script which allowed me to dynamically define a few product entries, and populate the table according to some variables I choose. I realized quickly that the data needed some "shape" to it, and so rather than naively populating each table with random selections, I added some "flavor" to the data:
+I realized quickly that the data needed some "shape" to it, and so rather than naively populating each table with random selections, I added some "flavor" to the data:
 - Fixed random seeds
 - Make certain products favor certain sentiments (a review bias)
 - Make certain products more popular (log-normal weights for populating orders)
 - Vary demand-per-day to simulate busier/quieter days
 - Balance review coverage independently of sales
 
-For the purpose of this demo, I generated a fairly-rich dataset for the agents to work with. 
+For the purpose of this demo, I generated a fairly-rich dataset for the agents to work with and extract meaningful insights from. 
 
 ⭐️ *Specific details of the dataset used are in the [Dataset](#dataset) section.*
 
+***What tools should the agents use?***
 
-## Outline
+For the available tools, I chose to be deliberately modest, because I was really interested in comparing how different models work with a limited set of tools. The agents only have two tools available to them:
+- `get_schema()`: returns a schema of the SQLite table, including columns/relationships
+- `run_sql(query)`: execute a read-only SQL query on the table, returns columns and rows.
 
-Research question: 
+## File structure
 
-- Define evaluation questions
-- Define tools
-- Build smallest working agent prototype (use cheaper model for testing)
-- Connect phoenix early
-- Inspectg differences
+Another **challenge** I faced was in architecting the actual project structure. Abstraction becomes fairly difficult when there is a lot of unknown, so I spent significant time understanding the dataflow, and what my code needs to provide. I ended with the following structure, which felt very clean to work with:
 
-## Measurements
+```sh
+├── data
+│   ├── questions.json   #   6 questions in json format, for eval.py
+│   └── store.sqlite     #   sqlite dataset (see Dataset section)
+│
+├── helpers              
+│   └── build_dataset.py # generates the store data into store.sqlite
+│
+├── agent.py             # provides run_agent(question, model) for experiment.py
+├── tools.py             # provides get_schema(), run_sql(sql) tools for agent.py
+├── database.py          # provides SQLite query execution for tools.py
+├── eval.py              # provides evaluate(output, expected) -> score for experiment.py
+│
+├── experiment.py        # main wrapper, interfaces with everything else
+├── tracing.py           # initializes tracer, provides wrapper
+│
+└── pyproject.toml
 
-I'll run one Phoenix experiment per model against the same six questions. Each question produces an agent run with a trace and a correctness evaluation. The prompt, tools, database, reasoning effort, and evaluation criteria will remain fixed across models.
-
-**Observability**
-
-| Measurement | Source / calculation |
-| --- | --- |
-| Model | `llm.model_name` on the model-call spans |
-| Input tokens | `llm.token_count.prompt` |
-| Output tokens | `llm.token_count.completion` |
-| Total tokens | `llm.token_count.total` |
-| Reasoning tokens, when reported | `llm.token_count.completion_details.reasoning` |
-| Agent latency | End-to-end duration of the agent span, excluding evaluation |
-| Tool calls | Number of executed tool spans with `openinference.span.kind = "TOOL"` |
-| LLM calls | Number of model-call spans with `openinference.span.kind = "LLM"` |
-| Execution errors | Spans marked `ERROR`; distinguish recovered tool errors from failed agent runs |
-| Estimated cost | Token usage multiplied by the applicable model pricing, accounting for cache usage where reported |
-
-Token counts are recorded per LLM call and summed across the agent run, without also counting parent-span totals. Reasoning tokens are a breakdown of output usage, not an additional amount to add to total tokens. Missing usage fields will be treated as unavailable rather than zero. Evaluation uses Python code and requires no additional model calls.
-
-Phoenix supports automatic cost calculation when it has the matching model pricing. I'll verify the rates for these new models and configure custom prices if needed. See [Phoenix cost tracking](https://arize.com/docs/phoenix/tracing/how-to-tracing/cost-tracking).
-
-**Evaluation — whether the answer was correct**
-
-Phoenix will run a deterministic Python evaluator that compares the agent's structured answer with the reference answer. It checks the requested fields, values, completeness, and sorting. Numeric formatting differences such as `170` versus `170.00` are equivalent; money, ratings, and percentages are compared at two decimal places. The agent's output format will be specified consistently across models, so scoring does not depend on matching prose. No LLM judge is used.
-
-| Output | Meaning |
-| --- | --- |
-| Label | `correct` or `incorrect` |
-| Score | `1` for a correct answer; `0` for an incorrect, missing, or incomplete answer |
-| Explanation | Why the answer passed or failed |
-
-I'll compare accuracy overall and by difficulty tier, alongside latency, tokens, cost, and tool calls per question. Evaluator failures will be reported separately from incorrect agent answers. Tool-call counts measure usage, not correctness: fewer calls are only useful if the answer is still right.
+```
 
 ## Running experiments
 
@@ -111,32 +96,6 @@ python experiment.py --models gpt-6-luna gpt-6-sol gpt-6-astra
 python experiment.py --models gpt-6-luna
 python experiment.py --models gpt-6-sol
 python experiment.py --models gpt-6-astra
-```
-
-
-
-## File structure
-
-```
-tools.py - used by agents.py
-    get_schema()
-    run_query(sql) -> result
-
-agents.py - called by experiment.py
-    run_agent(question, model) -> answer
-
-eval.py - called by experiment.py
-    deterministic comparison of structured answers
-    evaluate(expected_answer, answer) -> label, score, explanation
-
-experiment.py - coordinates agent and evaluator
-    loads dataset
-    configure tracing
-    for each model
-        start experiment(model)
-        for each question
-            run_agent(question, model) -> answer
-            evaluate(expected_answer, answer) -> label, score, explanation
 ```
 
 ## Evaluation questions
