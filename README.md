@@ -13,11 +13,48 @@ Such concerns greatly illuminate the value in being able to devise one's own lab
 A **coffee shop owner** tends to use AI agents through OpenAI's API to analyze their sales data. Their question:
 - **How do the newly-released GPT-6 models (Luna, Sol) compare to Astra in terms of cost, correctness, latency, tool utilization, and token usage, under my specific needs?**
 
-With our question now defined, we can begin designing the experiment's structure.
+I've chronologically documented my process of addressing this question, demonstrating how Phoenix greatly aids the process, while pointing out some challenges I've faced throughout. The [Results](#results) section compresses the experiment's results, and highlights what I've learned.
 
-The only independent variables in this experiment are the model itself (`gpt-6-luna`, `gpt-6-sol`, `gpt-6-astra`). For the sake of comparison, all other variables (reasoning effort, prompt, available tools) remain the same.
+## Phase 1: Getting started
 
-We want to test these three different models to answer 6 different questions grouped within 3 tiers of difficulty. Details about this can be found below: [Questions](#evaluation-questions).
+My first **challenge** was decomposing this question, and actually design an experiment. I began by asking:
+
+***What are we comparing?***
+
+The only independent variable in this experiment is the model itself (`gpt-6-luna`, `gpt-6-sol`, `gpt-6-astra`). For the sake of comparison, all other variables (reasoning effort, prompt, available tools) remain the same.
+
+***What are we measuring?***: Cost, correctness, latency, tools, tokens
+
+| Category | Metric name as revealed by Phoenix | 
+| --- | --- |
+| Cost | `costSummary.total.cost` |
+| Correctness | `correctness` (see below) |
+| Latency | `latency_ms` |
+| Tools Used | `span_kind = "TOOL"` |
+| Token Usage | `llm.token_count.prompt`, `llm.token_count.completion`, `llm.token_count.total` |
+
+***What defines correctness?***
+
+For evaluating correctness, 6 questions within 3 categories (beginner, intermediate, advanced) will be asked to the agent about the data, and responses will be compared to expected output. 
+
+⭐️ *Full details about the questions asked are in the [Evaluation Questions](#evaluation-questions) section.*
+
+***What data should my shop use?***
+
+Most of the datasets I could find online were pretty dramatic in scope—either too specialized, too reduced, or just confusing. I wanted data rich enough for the agent to work with, but simple enough to not detract from the demo's focus.
+
+I decided the cleanest approach here would be to devise my own mock dataset, containing 3 tables: `products`, `orders`, and `reviews`. In terms of generating reviews, this also provides me a nicely contained environment to begin using OpenAI's API. 
+
+Inside `helpers/build_dataset.py`, I bulit a small helper script which allowed me to dynamically define a few product entries, and populate the table according to some variables I choose. I realized quickly that the data needed some "shape" to it, and so rather than naively populating each table with random selections, I added some "flavor" to the data:
+- Fixed random seeds
+- Make certain products favor certain sentiments (a review bias)
+- Make certain products more popular (log-normal weights for populating orders)
+- Vary demand-per-day to simulate busier/quieter days
+- Balance review coverage independently of sales
+
+For the purpose of this demo, I generated a fairly-rich dataset for the agents to work with. 
+
+⭐️ *Specific details of the dataset used are in the [Dataset](#dataset) section.*
 
 
 ## Outline
@@ -122,26 +159,6 @@ To simulate the demands of a business analyst's agentic workflow, I've defined *
 | 🔴 | 6. For each category, report total revenue and the percentage of all reviews in that category rated 1 or 2. Count each order and each review once, and sort alphabetically by category. | Coffee: $250.50, 55.56%; Pastries: $204.50, 0.00%; Tea: $261.50, 100.00% |
 
 Note: Use all recorded data. An order is one row in `orders`; units sold is the sum of `quantity`; revenue is the sum of `quantity × unit_price` in USD. Average ratings weight each review equally, and rating thresholds apply before rounding. *Expected* values are displayed to two decimal places where relevant; the evaluator compares structured values rather than exact response wording.
-
-
-## Beginning the process
-
-To begin, my first **challenge** was actually choosing a dataset for the agents to operate on. I wanted to simulate the environment of a business-analyst accurately enough, but most of the datasets I found were pretty dramatic in scope—either too specialized, too reduced, or just confusing.
-
-I decided the cleanest approach here would be to devise my own sales dataset, containing `products`, `orders`, and `reviews`. In terms of generating reviews, this also provides me a nicely contained environment to begin using OpenAI's API.
-
-To proceed, I built a small script (contained in `helpers/build_dataset.py`) which allows me to dynamically define a few `(product, category, price)` product entries, and then the script will populate the `products`, `orders`, and `reviews` tables accordingly.
-
-While this is still the scaffolding phase, another **challenge** was shaping the data. Naively populating each table with uniformly random selections doesn't provide much value in the data, and therefore doesn't provide rich evaluation for our agent. 
-
-Adding some flavor to our data, I solved this challenge with a few additions:
-- Fixed random seeds
-- Make certain products favor certain sentiments (a review bias)
-- Make certain products more popular (log-normal weights for populating orders)
-- Vary demand-per-day to simulate busier/quieter days
-- Balance review coverage independently of sales
-
-At this point, I generated a dataset a fairly-rich dataset for the agents to work with. Full details can be found in [Dataset](#dataset).
 
 
 ## Dataset
