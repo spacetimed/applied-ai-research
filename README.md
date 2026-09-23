@@ -63,9 +63,9 @@ For the available tools, I chose to be deliberately modest, because I was really
 - `get_schema()`: returns a schema of the SQLite table, including columns/relationships
 - `run_sql(query)`: execute a read-only SQL query on the table, returns columns and rows.
 
-## File structure
+## Modeling the file structure
 
-Another **challenge** I faced was in architecting the actual project structure. Abstraction becomes fairly difficult when there is a lot of unknown, so I spent significant time understanding the dataflow, and what my code needs to provide. I ended with the following structure, which felt very clean to work with:
+Another **challenge** I faced was in architecting the actual project structure. Abstraction becomes fairly difficult when there is a lot of unknown, so I spent significant time understanding the dataflow, and what my code needed to provide. I ended with the following structure, which felt very clean to work with, thus proving effective:
 
 ```sh
 ├── data
@@ -84,8 +84,29 @@ Another **challenge** I faced was in architecting the actual project structure. 
 ├── tracing.py           # initializes tracer, provides wrapper
 │
 └── pyproject.toml
-
 ```
+
+## Incorporating Phoenix into the experiment
+
+When working with Phoenix, the hardest part was everything that came before it. [Designing the experiment](#designing-the-experiment) required some measured brainstorming, but at that point, everything was neatly modularized: `agent.py` was able to ask questions with designated models, and I could then use `eval.py` to evaluate that agent's result for correctness. 
+
+I realized at this point there was an application for both domains of Phoenix's offerings: observability and evaluation.
+
+**Observability**
+
+Traces provided everything I needed to know about the measurements I desired, such as cost, token usage, and tool call chain. Implementing this layer was much easier than expected: I simply created `tracing.py`, loosely following Arize's introductory documentation[[0]](#references). Afterwards, I only needed to wrap my `run_agent` in `@tracer.agent`, and my tool calls in `@tracer.tool`. 
+
+I ran a small prompt, and Phoenix's frontend provided a vast amount of detail for the call. At this point, I was impressed.
+
+**Evaluation**
+
+While I could use `eval.py` to now write my own wrapper which groups experiments, iterates through models, asks questions, classifies correctness, groups traces, and much (much...) more, Phoenix's evaluation layer provided great simplicity.
+
+I composed an `experiment.py` file, and in under 50-lines I was able to import the `questions.json` as a dataset, name the experiment group, and use my already-created files to conduct the experiment. The output was elegant and succinct:
+
+![](./images/output.png)
+
+
 
 ## Running experiments
 
@@ -149,6 +170,6 @@ Some meaningful properties about our data can be inferred:
 - Blueberry muffins have the highest average rating, but the lowest revenue
 - Chai lattes receive the second-most orders, despite having a low-rating
 
-# Resources
+# References
+- [0] = https://arize-phoenix.readthedocs.io/projects/otel/
 - https://github.com/arize-ai/phoenix
-- https://arize-phoenix.readthedocs.io/projects/otel/
