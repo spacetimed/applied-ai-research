@@ -6,4 +6,7 @@ requires-python = ">=3.10"
 dependencies = [
     "openai",
     "python-dotenv",
+    "arize-phoenix",
+    "arize-phoenix-otel",
+    "openinference-instrumentation-openai",
 ]
