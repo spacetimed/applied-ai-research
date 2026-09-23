@@ -1,21 +1,28 @@
 # Comparing the new family of GPT-6 models using Phoenix
 
-As of September 22nd, OpenAI has expanded their GPT-6 family, [launching Luna and Sol](https://openai.com/index/introducing-gpt-6-sol-and-luna/), expanding around their flagship Astra model. These two new models provide many of the same advances as Astra at a cheaper price, with the launch page showing impressive results from many general benchmarks. 
+As of September 22nd, OpenAI has expanded their GPT-6 family, [launching Luna and Sol](https://openai.com/index/introducing-gpt-6-sol-and-luna/), expanding beyond their flagship Astra model. These two new models provide many of the same advances as Astra at a cheaper price, with the launch page showing impressive results from many benchmarks. 
 
-With such an expansion comes freedom of choice, and therefore, many will wonder which model is right for them. While all three models share similarities, they can also differ significantly. For example, `gpt-6-luna` appears to be around 10x cheaper than `gpt-6-astra` in API costs. Benchmarks may also be unreliable or misleading, especially when showcased on a company's launch page. Lastly, on the day of a model's launch, limited information is available about the model itself.
+With such an expansion comes freedom of choice, and therefore, many will wonder which model is right for them. While all three models share similarities, they can also differ significantly. For example, `gpt-6-luna` appears to be around 10x cheaper than `gpt-6-astra` in API costs. Benchmarks can also be unreliable or misleading, especially when under a company's launch page. Lastly, on the day of a model's launch, limited public information is available about the model itself.
 
-All of these concerns I mention greatly illuminates the value in being able to devise your own model benchmarks within your specialized use-case. This write-up simulates the perspective of a coffee shop owner who wishes to assess the newly-released model's performance under their personal workflow.
+Such concerns greatly illuminate the value in being able to devise one's own laboratory for comparing models, within their specialized use-case. This write-up describes how a coffee shop owner may use **Phoenix** to choose which model is right for their purpose of sales analyzing.
 
 ## Project: Analyzing a coffee shop's sales
 
 <img src="images/art.png" width="300">
 
+A **coffee shop owner** tends to use AI agents through OpenAI's API to analyze their sales data. Their question:
+- **How do the newly-released GPT-6 models (Luna, Sol) compare to Astra in terms of cost, correctness, latency, tool utilization, and token usage, under my specific needs?**
 
+With our question now defined, we can begin designing the experiment's structure.
+
+The only independent variables in this experiment are the model itself (`gpt-6-luna`, `gpt-6-sol`, `gpt-6-astra`). For the sake of comparison, all other variables (reasoning effort, prompt, available tools) remain the same.
+
+We want to test these three different models to answer 6 different questions grouped within 3 tiers of difficulty. Details about this can be found below: [Questions](#evaluation-questions).
 
 
 ## Outline
 
-Research question: **How do the newly-released GPT-6 models (Luna, Sol) compare to Astra in terms of cost, correctness, latency, tool utilization, and token usage?**
+Research question: 
 
 - Define evaluation questions
 - Define tools
