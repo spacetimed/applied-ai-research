@@ -6,7 +6,7 @@ My project will be framed around using these new models in an agentic environmen
 
 ## Outline
 
-Research question: **How do the newly-released GPT-6 models (Luna, Sol) compare to Astra in terms of cost, correctness, latency, and token usage?**
+Research question: **How do the newly-released GPT-6 models (Luna, Sol) compare to Astra in terms of cost, correctness, latency, tool utilization, and token usage?**
 
 - Define evaluation questions
 - Define tools
@@ -14,12 +14,71 @@ Research question: **How do the newly-released GPT-6 models (Luna, Sol) compare 
 - Connect phoenix early
 - Inspectg differences
 
+## Measurements
+
+I'll run one Phoenix experiment per model against the same six questions. Each question produces an agent run with a trace and a correctness evaluation. The prompt, tools, database, reasoning effort, and evaluation criteria will remain fixed across models.
+
+**Observability**
+
+| Measurement | Source / calculation |
+| --- | --- |
+| Model | `llm.model_name` on the model-call spans |
+| Input tokens | `llm.token_count.prompt` |
+| Output tokens | `llm.token_count.completion` |
+| Total tokens | `llm.token_count.total` |
+| Reasoning tokens, when reported | `llm.token_count.completion_details.reasoning` |
+| Agent latency | End-to-end duration of the agent span, excluding evaluation |
+| Tool calls | Number of executed tool spans with `openinference.span.kind = "TOOL"` |
+| LLM calls | Number of model-call spans with `openinference.span.kind = "LLM"` |
+| Execution errors | Spans marked `ERROR`; distinguish recovered tool errors from failed agent runs |
+| Estimated cost | Token usage multiplied by the applicable model pricing, accounting for cache usage where reported |
+
+Token counts are recorded per LLM call and summed across the agent run, without also counting parent-span totals. Reasoning tokens are a breakdown of output usage, not an additional amount to add to total tokens. Missing usage fields will be treated as unavailable rather than zero. Evaluation uses Python code and requires no additional model calls.
+
+Phoenix supports automatic cost calculation when it has the matching model pricing. I'll verify the rates for these new models and configure custom prices if needed. See [Phoenix cost tracking](https://arize.com/docs/phoenix/tracing/how-to-tracing/cost-tracking).
+
+**Evaluation — whether the answer was correct**
+
+Phoenix will run a deterministic Python evaluator that compares the agent's structured answer with the reference answer. It checks the requested fields, values, completeness, and sorting. Numeric formatting differences such as `170` versus `170.00` are equivalent; money, ratings, and percentages are compared at two decimal places. The agent's output format will be specified consistently across models, so scoring does not depend on matching prose. No LLM judge is used.
+
+| Output | Meaning |
+| --- | --- |
+| Label | `correct` or `incorrect` |
+| Score | `1` for a correct answer; `0` for an incorrect, missing, or incomplete answer |
+| Explanation | Why the answer passed or failed |
+
+I'll compare accuracy overall and by difficulty tier, alongside latency, tokens, cost, and tool calls per question. Evaluator failures will be reported separately from incorrect agent answers. Tool-call counts measure usage, not correctness: fewer calls are only useful if the answer is still right.
+
+## File structure
+
+```
+tools.py - used by agents.py
+    get_schema()
+    run_query(sql) -> result
+
+agents.py - called by experiment.py
+    run_agent(question, model) -> answer
+
+eval.py - called by experiment.py
+    deterministic comparison of structured answers
+    evaluate(expected_answer, answer) -> label, score, explanation
+
+experiment.py - coordinates agent and evaluator
+    loads dataset
+    configure tracing
+    for each model
+        start experiment(model)
+        for each question
+            run_agent(question, model) -> answer
+            evaluate(expected_answer, answer) -> label, score, explanation
+```
+
 ## Evaluation questions
 
-To simulate the demands of a business analyst's agentic workflow, I've defined **9 questions tiered into 3 groups**:
+To simulate the demands of a business analyst's agentic workflow, I've defined **6 questions tiered into 3 groups, with 2 questions per group**:
 1. 🟢 **elementary:** more simple, such as basic SQL counts/sums
 2. 🟡 **intermediate:** more complex, perhaps involving joins/groups/filtering
-3. 🔴 **advanced:** complex, involving perhaps multiple SQL calls or additional resources
+3. 🔴 **advanced:** combine sales and review aggregates with multiple conditions; may require more complex SQL, but not necessarily more tool calls
 
 **Question bank:**
 
@@ -27,16 +86,13 @@ To simulate the demands of a business analyst's agentic workflow, I've defined *
 | Tier | Question | Expected |
 | --- | --- | --- |
 | 🟢 | 1. How many orders are recorded? | 100 |
-| 🟢 | 2. How many total units were sold? | 160 |
-| 🟢 | 3. What is the total revenue? | $716.50 |
-| 🟡 | 4. For each category, report its order count, units sold, and revenue. Sort alphabetically by category. | Coffee: 38 orders, 57 units, $250.50; Pastries: 29 orders, 53 units, $204.50; Tea: 33 orders, 50 units, $261.50 |
-| 🟡 | 5. Which three products generated the most revenue? Return their names and revenue, ranked highest first. Break ties by lower product ID. | Latte: $170.00; Croissant: $152.00; Chai Latte: $135.00 |
-| 🟡 | 6. Which products in the catalog had no orders during September 2026? Return their names alphabetically. | Matcha Latte |
-| 🔴 | 7. Which products sold at least 20 units and have an average rating strictly below 2? Report their names, units sold, and average ratings, ordered alphabetically by product name. | Chai Latte: 27 units, 1.00; Latte: 34 units, 1.80; Matcha Latte: 23 units, 1.50 |
-| 🔴 | 8. For each category, report total revenue and the percentage of all reviews in that category rated 1 or 2. Count each order and each review once, and sort alphabetically by category. | Coffee: $250.50, 55.56%; Pastries: $204.50, 0.00%; Tea: $261.50, 100.00% |
-| 🔴 | 9. For every category, find the product with the highest November 2026 revenue among products with at least one November order and an overall average rating strictly below 2. Report the category, product name, November revenue, and overall average rating. Include categories with no qualifying product using null for the product, revenue, and rating. Sort alphabetically by category and break revenue ties by lower product ID. | Coffee: Latte, $75.00, 1.80; Pastries: null, null, null; Tea: Matcha Latte, $88.00, 1.50 |
+| 🟢 | 2. What is the total revenue? | $716.50 |
+| 🟡 | 3. For each category, report its order count, units sold, and revenue. Sort alphabetically by category. | Coffee: 38 orders, 57 units, $250.50; Pastries: 29 orders, 53 units, $204.50; Tea: 33 orders, 50 units, $261.50 |
+| 🟡 | 4. Which three products generated the most revenue? Return their names and revenue, ranked highest first. Break ties by lower product ID. | Latte: $170.00; Croissant: $152.00; Chai Latte: $135.00 |
+| 🔴 | 5. Which products sold at least 20 units and have an average rating strictly below 2? Report their names, units sold, and average ratings, ordered alphabetically by product name. | Chai Latte: 27 units, 1.00; Latte: 34 units, 1.80; Matcha Latte: 23 units, 1.50 |
+| 🔴 | 6. For each category, report total revenue and the percentage of all reviews in that category rated 1 or 2. Count each order and each review once, and sort alphabetically by category. | Coffee: $250.50, 55.56%; Pastries: $204.50, 0.00%; Tea: $261.50, 100.00% |
 
-Note: *Expected* values are rounded to two decimal places, and exact response wording may vary slightly.
+Note: Use all recorded data. An order is one row in `orders`; units sold is the sum of `quantity`; revenue is the sum of `quantity × unit_price` in USD. Average ratings weight each review equally, and rating thresholds apply before rounding. *Expected* values are displayed to two decimal places where relevant; the evaluator compares structured values rather than exact response wording.
 
 
 ## Beginning the process
@@ -87,3 +143,7 @@ Some meaningful properties about our data can be inferred:
 - Croissants lead in units sold
 - Blueberry muffins have the highest average rating, but the lowest revenue
 - Chai lattes receive the second-most orders, despite having a low-rating
+
+# Resources
+- https://github.com/arize-ai/phoenix
+- https://arize-phoenix.readthedocs.io/projects/otel/
