@@ -7,7 +7,7 @@ from phoenix.client.experiments import run_experiment
 from agent import run_agent
 from eval import evaluate
 
-DATASET_NAME = "coffee-shop-questions"
+DATASET_NAME = "coffee-shop-final-experiment"
 
 
 def main():
