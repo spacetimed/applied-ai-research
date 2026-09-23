@@ -106,20 +106,64 @@ I composed an `experiment.py` file, and in under 50-lines I was able to import t
 
 ![](./images/output.png)
 
-
-
-## Running experiments
+I designed my `experiment.py` so experiments can be ran cleanly:
 
 ```sh
 python experiment.py --models gpt-6-luna gpt-6-sol gpt-6-astra
 
-# or alternatively, run models independently
+# or alternatively, run each model independently
 python experiment.py --models gpt-6-luna
 python experiment.py --models gpt-6-sol
 python experiment.py --models gpt-6-astra
+python experiment.py --models gpt-5.6-sol # and perhaps other models! 🙂
 ```
 
-## Evaluation questions
+## Results
+
+Now was the exciting part. After running the three experiments, I was able to quickly sift through all of my findings, and the amount of detail for such little code I wrote was amazing.
+
+The following measurements were exported from `coffee-shop-final-experiment`: one run per question, six questions per model. Cost, tool calls, and token usage are totals; correctness and latency are averages across the six questions. Costs are in USD; latency excludes evaluation.
+
+**gpt-6-luna**:
+
+| Category | Metric name as revealed by Phoenix | Result |
+| --- | --- | --- |
+| Cost | `costSummary.total.cost` | $0.0014818 |
+| Correctness | `correctness` | 1.00 (6/6 correct) |
+| Latency | `latency_ms` | 4,239.20 ms |
+| Tools Used | `span_kind = "TOOL"` | 12 calls: 6 `get_schema`, 6 `run_sql` |
+| Token Usage | `llm.token_count.prompt` | 10,658 |
+| Token Usage | `llm.token_count.completion` | 832 |
+| Token Usage | `llm.token_count.total` | 11,490 |
+
+**gpt-6-sol**:
+
+| Category | Metric name as revealed by Phoenix | Result |
+| --- | --- | --- |
+| Cost | `costSummary.total.cost` | $0.0279600 |
+| Correctness | `correctness` | 1.00 (6/6 correct) |
+| Latency | `latency_ms` | 3,844.81 ms |
+| Tools Used | `span_kind = "TOOL"` | 11 calls: 5 `get_schema`, 6 `run_sql` |
+| Token Usage | `llm.token_count.prompt` | 9,900 |
+| Token Usage | `llm.token_count.completion` | 816 |
+| Token Usage | `llm.token_count.total` | 10,716 |
+
+**gpt-6-astra**:
+
+| Category | Metric name as revealed by Phoenix | Result |
+| --- | --- | --- |
+| Cost | `costSummary.total.cost` | $0.1389600 |
+| Correctness | `correctness` | 1.00 (6/6 correct) |
+| Latency | `latency_ms` | 6,078.55 ms |
+| Tools Used | `span_kind = "TOOL"` | 11 calls: 5 `get_schema`, 6 `run_sql` |
+| Token Usage | `llm.token_count.prompt` | 9,886 |
+| Token Usage | `llm.token_count.completion` | 802 |
+| Token Usage | `llm.token_count.total` | 10,688 |
+
+
+## What I learned
+
+## Appendix: Evaluation questions
 
 To simulate the demands of a business analyst's agentic workflow, I've defined **6 questions tiered into 3 groups, with 2 questions per group**:
 1. 🟢 **elementary:** more simple, such as basic SQL counts/sums
@@ -141,7 +185,7 @@ To simulate the demands of a business analyst's agentic workflow, I've defined *
 Note: Use all recorded data. An order is one row in `orders`; units sold is the sum of `quantity`; revenue is the sum of `quantity × unit_price` in USD. Average ratings weight each review equally, and rating thresholds apply before rounding. *Expected* values are displayed to two decimal places where relevant; the evaluator compares structured values rather than exact response wording.
 
 
-## Dataset
+## Appendix: Dataset
 
 The dataset my agents will work with is stored in `store.sqlite`, with the following schema:
 
@@ -170,6 +214,6 @@ Some meaningful properties about our data can be inferred:
 - Blueberry muffins have the highest average rating, but the lowest revenue
 - Chai lattes receive the second-most orders, despite having a low-rating
 
-# References
+## Appendix: References and resources
 - [0] = https://arize-phoenix.readthedocs.io/projects/otel/
 - https://github.com/arize-ai/phoenix
