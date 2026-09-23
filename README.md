@@ -129,8 +129,8 @@ Another **challenge** I faced was in architecting the actual project structure. 
 │   └── build_dataset.py # generates the sqlite dataset
 │
 ├── agent.py             # run_agent(question, model); for experiment.py
-├── tools.py             # get_schema(), run_sql(sql) tools; for agent.py
-├── database.py          # execute_query(sql); for tools.py
+├── tools.py             #  get_schema(), run_sql(sql) tools; for agent.py
+├── database.py          #   execute_query(sql); for tools.py
 ├── eval.py              # evaluate(output, expected); for experiment.py
 │
 ├── experiment.py        # main driver, interfaces with everything else
@@ -173,9 +173,10 @@ python experiment.py --models gpt-5.6-sol # and perhaps other models! 🙂
 
 ## 6. Results
 
-Now was the exciting part. After running the three experiments, I was able to quickly sift through all of my findings, and the amount of detail for such little code I wrote was amazing.
+Now was the exciting part. After running the three experiments, I was able to quickly sift through all of my findings, and the amount of detail and visualization for such little code I wrote was amazing.
 
-The following measurements were exported from `coffee-shop-final-experiment`: one run per question, six questions per model. Cost, tool calls, and token usage are totals; correctness and latency are averages across the six questions. Costs are in USD; latency excludes evaluation.
+
+The following measurements were exported from `coffee-shop-final-experiment`:
 
 ![](./images/comparison.png)
 
@@ -215,9 +216,17 @@ The following measurements were exported from `coffee-shop-final-experiment`: on
 | Token Usage | `llm.token_count.completion` | 802 |
 | Token Usage | `llm.token_count.total` | 10,688 |
 
+What stood out to me was how little the extra spending benefited this particular use-case. Even for questions which seemed quite involved, each of the three models were able to score `6.0 / 6.0` on the evaluation score. **Luna's** total cost was roughly 94 times lower than **Astra's**, despite using slightly more tokens. **Sol** had the lowest average latency, though only about 0.4 seconds faster than **Luna**. 
 
-## What I learned
+For this coffee shop's six questions, the release of Luna particularly provides immense value in performing the responsibilities demanded for a much cheaper price. 
 
-## Appendix: References and resources
-- [0] = https://arize-phoenix.readthedocs.io/projects/otel/
+
+## 7. Project reflection
+
+***What is the general takeaway?***
+
+***What did I personally learn?***
+
+## References and resources
+- [0]https://arize-phoenix.readthedocs.io/projects/otel/
 - https://github.com/arize-ai/phoenix
