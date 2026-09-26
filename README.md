@@ -2,7 +2,7 @@
 
 As of September 22nd, OpenAI has expanded their GPT-6 family, [launching Luna and Sol](https://openai.com/index/introducing-gpt-6-sol-and-luna/), expanding beyond their flagship Astra model. These two new models provide many of the same advances as Astra at a cheaper price, with the launch page showing impressive results from many benchmarks. 
 
-With such an expansion comes freedom of choice, and therefore, many will wonder which model is right for them. While all three models share similarities, they can also differ significantly. For example, `gpt-6-luna` appears to be around 10x cheaper than `gpt-6-astra` in API costs. Launch benchmarks can also be unreliable, misleading, or too generalized. On the day of a model's launch, limited public information is often available about the model itself, leaving consumers with many questions.
+With such an expansion comes freedom of choice, and therefore, many will wonder which model is right for them. While all three models share similarities, they can also differ significantly. For example, `gpt-6-luna` appears to be around 100x cheaper than `gpt-6-astra` in API costs. Launch benchmarks are also useful, but necessarily generalized. On the day of a model's launch, limited public information is often available about the model itself, leaving consumers with many questions.
 
 Such concerns greatly illuminate the value in being able to devise one's own laboratory for comparing models, within their own specialized use-case. This write-up describes how a coffee shop owner may use **Phoenix** to choose which model is right for their unique purpose.
 
@@ -10,8 +10,8 @@ Such concerns greatly illuminate the value in being able to devise one's own lab
 
 <img src="images/art.png" width="300">
 
-A **coffee shop owner** tends to use AI agents through OpenAI's API to analyze their sales data. Their question:
-- **How do the newly-released GPT-6 models (Luna, Sol) compare to Astra in terms of cost, correctness, latency, tool utilization, and token usage, under the specialized purpose of business analyzing?**
+Consider a **coffee shop owner** using an AI agent through OpenAI's API to analyze their sales data. Their question:
+- **How do the newly-released GPT-6 models (Luna, Sol) compare to Astra in terms of cost, correctness, latency, tool utilization, and token usage, under the specialized purpose of business analytics?**
 
 I've chronologically documented my process of addressing this question, demonstrating how Phoenix greatly aids the process, while pointing out some challenges I've faced throughout. 
 
@@ -33,12 +33,6 @@ The only independent variable in this experiment is the model itself (`gpt-6-lun
 | Tools Used | `span_kind = "TOOL"` |
 | Token Usage | `llm.token_count.prompt`, `llm.token_count.completion`, `llm.token_count.total` |
 
-***What defines correctness?***
-
-For evaluating correctness, **6 questions will be asked to the agent**. There will be 3 modes of difficulty (**easy, medium, hard**), with 2 questions asked per difficulty-level. Responses will be compared to expected output to evaluate correctness.
-
-⭐️ *Full details about the questions asked are in the [Evaluation questions](#2-evaluation-questions) section.*
-
 ***Where can I find accurate sales data for a coffee shop?***
 
 Most of the datasets I found online were pretty dramatic in scope—either too specialized or too reduced. I wanted data rich enough for the agent to work with meaningfully, but simple enough to not detract away from the demo's focus—showcasing Phoenix.
@@ -57,6 +51,12 @@ I realized quickly that the data needed some "shape" to it, and so rather than n
 For the purpose of this demo, I generated a fairly-rich dataset for the agents to work with and extract meaningful insights from. 
 
 ⭐️ *Specific details of the dataset generated for the agent is in the [Mock dataset](#3-mock-dataset) section.*
+
+***What defines correctness?***
+
+For evaluating correctness, **6 questions will be asked to the agent**. There will be 3 modes of difficulty (**easy, medium, hard**), with 2 questions asked per difficulty-level. Responses will be compared to expected output to evaluate correctness.
+
+⭐️ *Full details about the questions asked are in the [Evaluation questions](#2-evaluation-questions) section.*
 
 ***What tools should the agents use?***
 
@@ -118,7 +118,7 @@ Each `(product, category, price)` entry below summarizes order counts, review co
 
 ## 4. Modeling the file structure
 
-Another **challenge** I faced was in architecting the actual project structure. Abstraction becomes fairly difficult when there is a lot of unknown, so I spent significant time understanding the dataflow, and what my code needed to provide. I ended with the following structure, which felt very clean to work with, thus proving effective:
+Another **challenge** I faced was in architecting the actual project structure. Abstraction becomes fairly difficult when there is a lot of unknown, so I spent significant time understanding the dataflow, and what my code needed to provide. I ended with the following structure, which felt very clean to work with, thus making data flow easier to think about:
 
 ```sh
 ├── data
@@ -180,52 +180,48 @@ The following measurements were exported from `coffee-shop-final-experiment`:
 
 ![](./images/comparison.png)
 
-**gpt-6-luna**:
+| Model | Cost | Correctness | Avg. Latency | Tool Calls | Prompt Tokens | Completion Tokens | Total Tokens |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `gpt-6-luna` | $0.0014818 | 1.00 (6/6) ✅ | 4,239.20 ms | 12 | 10,658 | 832 | 11,490 |
+| `gpt-6-sol` | $0.0279600 | 1.00 (6/6) ✅ | 3,844.81 ms | 11 | 9,900 | 816 | 10,716 |
+| `gpt-6-astra` | $0.1389600 | 1.00 (6/6) ✅ | 6,078.55 ms | 11 | 9,886 | 802 | 10,688 |
 
-| Category | Metric name as revealed by Phoenix | Result |
-| --- | --- | --- |
-| Cost | `costSummary.total.cost` | $0.0014818 |
-| Correctness | `correctness` | 1.00 (6/6 correct) |
-| Latency | `latency_ms` | 4,239.20 ms |
-| Tools Used | `span_kind = "TOOL"` | 12 calls: 6 `get_schema`, 6 `run_sql` |
-| Token Usage | `llm.token_count.prompt` | 10,658 |
-| Token Usage | `llm.token_count.completion` | 832 |
-| Token Usage | `llm.token_count.total` | 11,490 |
+**Phoenix metrics used:**
+- Cost: `costSummary.total.cost`
+- Correctness: `correctness`
+- Latency: `latency_ms`
+- Tool calls: spans where `span_kind = "TOOL"`
+- Token usage: `llm.token_count.prompt`, `llm.token_count.completion`, `llm.token_count.total`
 
-**gpt-6-sol**:
-
-| Category | Metric name as revealed by Phoenix | Result |
-| --- | --- | --- |
-| Cost | `costSummary.total.cost` | $0.0279600 |
-| Correctness | `correctness` | 1.00 (6/6 correct) |
-| Latency | `latency_ms` | 3,844.81 ms |
-| Tools Used | `span_kind = "TOOL"` | 11 calls: 5 `get_schema`, 6 `run_sql` |
-| Token Usage | `llm.token_count.prompt` | 9,900 |
-| Token Usage | `llm.token_count.completion` | 816 |
-| Token Usage | `llm.token_count.total` | 10,716 |
-
-**gpt-6-astra**:
-
-| Category | Metric name as revealed by Phoenix | Result |
-| --- | --- | --- |
-| Cost | `costSummary.total.cost` | $0.1389600 |
-| Correctness | `correctness` | 1.00 (6/6 correct) |
-| Latency | `latency_ms` | 6,078.55 ms |
-| Tools Used | `span_kind = "TOOL"` | 11 calls: 5 `get_schema`, 6 `run_sql` |
-| Token Usage | `llm.token_count.prompt` | 9,886 |
-| Token Usage | `llm.token_count.completion` | 802 |
-| Token Usage | `llm.token_count.total` | 10,688 |
 
 What stood out to me was how little the extra spending benefited this particular use-case. Even for questions which seemed quite involved, each of the three models were able to score `6.0 / 6.0` on the evaluation score. **Luna's** total cost was roughly 94 times lower than **Astra's**, despite using slightly more tokens. **Sol** had the lowest average latency, though only about 0.4 seconds faster than **Luna**. 
 
 For this coffee shop's six questions, the release of Luna particularly provides immense value in performing the responsibilities demanded for a much cheaper price. 
 
 
-## 7. Project reflection
+## 7. Reflection
 
-***What is the general takeaway?***
+***What did the results from this experience teach me?***
 
-***What did I personally learn?***
+I learned from the results of this experiment that it can often be deceptive how much advanced reasoning (or lack thereof) is required for a task. From what I've observed in my own social circles, we tend to overestimate how much reasoning our tasks demand, and consequently feel pressured to choose the latest and best model. But, as the results from this experiment teach, sometimes even smaller models can effortlessly complete the tasks that we personally rate as complex, while saving substantial costs.
+
+***What did I learn about Phoenix?***
+
+I learned that Phoenix *greatly* simplifies tasks which would otherwise be significantly demanding. While the option to wire OpenTelemetry manually exists, Phoenix abstracts a lot of that setup (and more) into a much more user-friendly setup, and its tutorial documentation was simple and accessible. Implementing Phoenix into my project, along with its MCP server companion, was very streamlined—consequently, it's very easy to talk about just *how much* its services assist an ordinary developer. The capabilities of Phoenix are powerful, and collecting traces, analyzing spans, and scoring evaluation was pleasant even for someone like me who had never used it before. 
+
+Something special about this experiment is that the model I was using had just come out the day *of*. The only novel thing I had to do to account for this was import the model's API cost into Phoenix; nothing additional was needed. Adaptability like that is remarkable in this field where change is imminent.
+
+***What challenges did I personally encounter, and how did I approach them?***
+
+**One challenge** I faced was in *transforming* a relevant and pressing topic (the release of GPT-6's new models) to a general question which is easily-answerable by Phoenix. While reading about GPT-6's new models releasing, I knew this unlocked significant questions for developers around the world. I wanted to choose the most general question all developers hold, transform that question into a practical "experimental space" to fully depict its essence, and answer that effortlessly with Phoenix. 
+
+**Another challenge** I faced (as mentioned in [1. Designing the experiment](#1-designing-the-experiment)) follows by extension to the previous challenge: seeding that general question with specificity, and modeling the experimental space accordingly. I briefly chatted with someone who has worked in the coffee industry and asked questions which allowed me to form "axes" around a general manager's problem-space. I was able to extract certain characteristics of the problem-space, such as the importance of product popularity and the unpredictableness of customer flow, which I used to model my mock shop's data more accurately. Decomposing my now-specific question into its core domains (shop data, importance of model choice, metrics to consider) required significant measured thought, but this preplanning is exactly what aided my project's workflow.
+
+**A third challenge** I faced was more general: seeding ambiguity with information; i.e. reducing the volume of uncertainty. At the start of the day, Phoenix (as a tool) and the new OpenAI models were completely novel to me; by the end of the day, I understood Phoenix and its workflow reasonably well, and felt proficient at vouching for Phoenix's effectiveness towards ordinary developers when choosing between different models within the GPT-6 family. I tend to systemize what I can't understand, which allows me to map knowledge dependencies into their core domains and approach each iteratively. Realizing complexity is often times an illusion, and that most pursuits can be broken down into a more axiomatic representation has been a superpower for me personally when it comes to learning new stuff—it makes the process exhilerating rather than draining.
+
+***What can another developer learn from this?***
+
+***What are the limitations of my experiment, and how would I change it?***
 
 ## References and resources
 - [0]https://arize-phoenix.readthedocs.io/projects/otel/
