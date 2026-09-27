@@ -151,28 +151,31 @@ I ran a small prompt, and Phoenix's frontend provided a vast amount of detail fo
 
 Phoenix's evaluation layer also provided a great deal of simplicity, as even the mere process of writing a wrapper around `eval.py` to iterate through models, collect traces, and group experiments would have been significant work.
 
-I composed an `experiment.py` file, and in under 50-lines I was able to import the `questions.json` as a dataset, name the experiment group, and use my already-created files to conduct the experiment. The output was elegant and succinct:
+I composed an `experiment.py` file while referencing Phoenix's API documentation for [experiments](https://arize-phoenix.readthedocs.io/projects/client/api/experiments.html) and [datasets](https://arize-phoenix.readthedocs.io/projects/client/api/datasets.html). In under 50-lines I was able to import the `questions.json` as a dataset, name the experiment group, and use my already-created files to conduct the experiment. The output was elegant and succinct:
 
 ![](./images/output.png)
 
-I designed my `experiment.py` so experiments could be ran cleanly, and working with Phoenix around this modularization was very natural:
+My `experiment.py` was now able to dynamically select OpenAI models, and create experiments under the model name within the dataset group.
 
 ```sh
+# run multiple models
 python experiment.py --models gpt-6-luna gpt-6-sol gpt-6-astra
 
-# or alternatively, run each model independently
+# or run each model independently
 python experiment.py --models gpt-6-luna
 python experiment.py --models gpt-6-sol
 python experiment.py --models gpt-6-astra
-python experiment.py --models gpt-5.6-sol # and perhaps other models! 🙂
+
+# or perhaps other models! 🙂
+python experiment.py --models gpt-5.6-sol 
+python experiment.py --models gpt-5-nano
 ```
 
 ## 6. Results
 
-Now was the exciting part. After running the three experiments, I was able to quickly sift through all of my findings, and the amount of detail and visualization was captivating.
+After running the three experiments for `gpt-6-luna`, `gpt-6-sol`, and `gpt-6-astra`, I was able to quickly sift through all of my findings, and the amount of detail visualized made comparison both easy and captivating.
 
-
-The following measurements were exported from `coffee-shop-final-experiment`:
+The following measurements comparing the three was exported from `coffee-shop-final-experiment`:
 
 ![](./images/comparison.png)
 
@@ -182,6 +185,8 @@ The following measurements were exported from `coffee-shop-final-experiment`:
 | `gpt-6-sol` | $0.0279600 | 1.00 (6/6) ✅ | 3,844.81 ms | 11 | 9,900 | 816 | 10,716 |
 | `gpt-6-astra` | $0.1389600 | 1.00 (6/6) ✅ | 6,078.55 ms | 11 | 9,886 | 802 | 10,688 |
 
+(todo, put openAI api costs here)
+
 **Phoenix metrics used:**
 - Cost: `costSummary.total.cost`
 - Correctness: `correctness`
@@ -190,35 +195,40 @@ The following measurements were exported from `coffee-shop-final-experiment`:
 - Token usage: `llm.token_count.prompt`, `llm.token_count.completion`, `llm.token_count.total`
 
 
-What stood out to me was how little the extra spending benefited this particular use-case. Even for questions which seemed quite involved, each of the three models were able to score `6.0 / 6.0` on the evaluation score. **Luna's** total cost was roughly 94 times lower than **Astra's**, despite using slightly more tokens. **Sol** had the lowest average latency, though only about 0.4 seconds faster than **Luna**. 
+What stood out to me was how little the extra spending benefited this particular set of questions. Even for questions which seemed quite involved, each of the three models were able to score `6.0 / 6.0` on the evaluation score. 
 
-For this coffee shop's six questions, the release of Luna particularly provides immense value in performing the responsibilities demanded for a much cheaper price. More reflection on this experiment and its results are mentioned in the upcoming [7. Reflection](#7-reflection) section.
+**Luna's** total cost was roughly 94 times lower than **Astra's**, despite using slightly more tokens, which matches OpenAI's token usage cost for the GPT-6 family. Interestingly, **Sol** had the lowest average latency, though only about 0.4 seconds faster than **Luna**. 
 
+For this coffee shop's six questions, the release of **Luna** particularly provides immense cost-saving value in performing the responsibilities demanded for a much cheaper price. In future experiments, I'd like to spend more time designing trickier questions to really test each model's capabilities.
 
 ## 7. Reflection
 
-***What did the results from this experience teach me?***
+***What did designing this project teach me?***
 
-I learned from the results of this experiment that it can often be deceptive how much advanced reasoning (or lack thereof) is required for a task. From what I've observed in my own social circles, we tend to overestimate how much reasoning our tasks demand, and consequently feel pressured to choose the latest and best model. But, as the results from this experiment teach, sometimes even smaller models can effortlessly complete the tasks that we personally rate as complex, while saving substantial costs. The problem-space of "choosing the right model" is very real right now, as options swarm consumers overwhelmingly, and Phoenix serves great utility in individually framing and answering such questions.
+Designing this experiment taught me how to identify a relevant and booming topic, derive the problem space which such news creates, choose a pressing question from within that problem space which Phoenix can easily answer, and finally transform said question into a practical experiment space to depict the ease and accessibility of Phoenix's suite. 
 
-***What did I learn about Phoenix?***
+***What did the results teach me?***
 
-I learned that Phoenix *greatly* simplifies tasks which would otherwise be significantly demanding and that it's very accessible. While the option to wire OpenTelemetry manually exists, Phoenix abstracts a lot of that setup (and more) into a much more user-friendly setup, and its tutorial documentation was simple and accessible. Implementing Phoenix into my project, along with its MCP server companion, was very streamlined—consequently, it's very easy to talk honestly about just *how much* its services assist an ordinary developer. The capabilities of Phoenix are powerful, and collecting traces, analyzing spans, and scoring evaluations was pleasant even for someone like me who had never used it before. 
+I learned from the results of this experiment that it can often be deceptive how much advanced reasoning (or lack thereof) is required for a task. From what I've observed in my own social circles, we tend to overestimate how much reasoning our tasks demand, and consequently feel pressured to choose the latest and best model. As the results from this experiment show, sometimes even smaller models can effortlessly complete the tasks that we personally rate as complex, while saving substantial costs. Designing trickier questions would also be valuable towards seeking richer model insight.
 
-Something special about this experiment is that the models I was using had just come out the day *of*. The only novel thing I had to do to account for this was import the model's API cost into Phoenix; nothing additional was needed beyond this triviality. Adaptability like that is remarkable in this field where change is imminent, and serves an astoundingly enticing point that I want to teach general AI developers about.
+***What did I learn about Phoenix, and what can another developer learn from it?***
 
-***What challenges did I personally encounter, and how did I approach them?***
+I learned that Phoenix *greatly* simplifies tasks which would otherwise be significantly demanding and that it's very accessible—and that people must know about this. It's adaptable to one's subjective needs, and provides personalized information that no general benchmark can.
 
-**One challenge** I faced was in *transforming* a relevant topic (the release of GPT-6's new models) to a general and pressing question easily answerable by Phoenix. While reading about GPT-6's new models releasing, I knew this prompted significant questions for developers around the world. I wanted to choose the most general question all developers likely hold, transform that question into a practical "experimental space" to fully depict its essence, and answer that effortlessly with Phoenix, focusing especially on ease. 
+While the option to wire OpenTelemetry manually exists, Phoenix abstracts a lot of that setup (and more) into a much more friendly setup, and its tutorial documentation was simple and accessible. Implementing Phoenix into my project, along with its MCP server companion, was very streamlined—consequently, it's very easy to talk honestly about just *how much* its services assist an ordinary developer. 
 
-**Another challenge** I faced (as mentioned in [1. Designing the experiment](#1-designing-the-experiment)) follows by extension to the previous challenge: seeding that general question with specificity, and modeling the experimental space accordingly. I briefly chatted with someone who has worked in the coffee industry and asked questions which allowed me to form "axes" around a general manager's problem-space. I was able to extract certain characteristics of the problem-space, such as the importance of product popularity and the unpredictableness of customer flow, which I used to model my mock shop's data and questions more accurately. Decomposing my now-specific research question into its core experimental domains (shop data, importance of model choice, metrics to consider) required significant measured thought, but this preplanning is exactly what aided my project's workflow and allowed me to stage a reasonable PoC within the same day.
+Something noteworthy is that the models I compared had just come out the day *of*, and the only extra step for me was importing the model's API cost into Phoenix. Adaptability like that is remarkable in this field, because change is so imminent. 
 
-**A third challenge** I faced was more general: meeting ambiguity with information; i.e. reducing the volume of perceived uncertainty. At the start of the day, Phoenix (as a tool), what a coffee shop sales analyst likely cares about, and the new OpenAI models were completely novel to me; by the end of the day, I understood Phoenix and its workflow reasonably well, and felt proficient at vouching for Phoenix's effectiveness towards ordinary developers when choosing between different models within the GPT-6 family, especially under a sales context. I systemize a lot of thought, which allows me to map knowledge (perhaps for general tasks like these) into its axiomatic domains, approaching each step iteratively and with intent. Realizing complexity is often times an illusion and that most pursuits can be broken down into a more axiomatic representation has been a superpower for me personally when it comes to learning new stuff—it makes the process exhilerating rather than draining, as I recognize the cognitive burn is what nurtures growth. 
+***What are some challenges I encountered, and how did I approach them?***
 
-***What can another developer learn from this?***
+**One challenge** I faced was in *transforming* a relevant topic (the release of GPT-6's new models) to a pressing question easily answerable by Phoenix. While reading about GPT-6's new models releasing, I knew this prompted significant questions for developers around the world. I wanted to choose the most general question that AI developers likely asked, transform that question into an experiment to fully depict its essence, and prove how effective Phoenix was at answering it.
 
-***What are the limitations of my experiment, and how would I change it?***
+**Another challenge** I faced follows by extension to the previous challenge: seeding that general question with specificity, and modeling it accurately. I briefly chatted with someone who worked in the coffee industry and asked questions which allowed me to form "axes" around an analyst's problem space. I learned about the importance of product popularity and the unpredictableness of customer flow, which made modeling my agent's data more exciting and accurate. 
 
-## References and resources
-- [0]https://arize-phoenix.readthedocs.io/projects/otel/
-- https://github.com/arize-ai/phoenix
+**A third challenge** I faced was more general: tackling ambiguity. At the start of the day, Phoenix (as a tool), the new OpenAI models and what questions they create, and what a sales analyst looks for were all novel domains to me. By the end of the day, I felt confident using Phoenix as a tool to assist with my workflow and vouch for its effectiveness, while being able to compare GPT-6 models within a simulated sales environment. Breaking pursuits down into their core domains and tackling each independently allows me to reduce complexity significantly which greatly helped me here.
+
+# Closure
+
+Thank you for the opportunity of completing this project! 😄
+
+It was exciting to learn and work on something cool and novel to me while exploring Phoenix and what it offers, and I hope what I've composed depicts my excitement!
