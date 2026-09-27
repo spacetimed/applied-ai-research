@@ -1,29 +1,28 @@
-# Comparing the new family of GPT-6 models using Phoenix
+# Comparing GPT-6 Luna, Sol, and Astra with Phoenix
 
-As of September 22nd, OpenAI has expanded their GPT-6 family, [launching Luna and Sol](https://openai.com/index/introducing-gpt-6-sol-and-luna/), expanding beyond their flagship Astra model. These two new models provide many of the same advances as Astra at a cheaper price, with the launch page showing impressive results from many benchmarks. 
+As of September 22nd, **OpenAI** has expanded their GPT-6 family, [launching Luna and Sol](https://openai.com/index/introducing-gpt-6-sol-and-luna/), expanding beyond their flagship Astra model. These two new models provide many of the same advances as Astra at a cheaper price. 
 
-With such an expansion comes freedom of choice, and therefore, many will wonder which model is right for them. While all three models share similarities, they can also differ significantly. For example, `gpt-6-luna` appears to be around 100x cheaper than `gpt-6-astra` in API costs. Launch benchmarks are also useful, but necessarily generalized. On the day of a model's launch, limited public information is often available about the model itself, leaving consumers with many specific questions.
+With such an expansion comes freedom of choice, and therefore, many will wonder which model is right for them. Limited public information, necessarily-generalized launch benchmarks, and drastically varying usage costs are factors which make that decision difficult for an ordinary AI developer.
 
-Such concerns greatly illuminate the value in being able to devise one's own laboratory for comparing models, comparing models under their own specialized use-case. This write-up describes how a coffee shop owner may use **Phoenix** to choose which model is right for their unique purpose.
+Such concerns greatly illuminate Phoenix's value of being able to devise one's own laboratory, comparing models under their own specialized use-case. I designed an experiment which models this problem practically, and then answers it with Phoenix.
 
-# Project: Analyzing a coffee shop's sales to choose the right GPT-6 model
+# Analyzing a coffee shop's sales to choose the right GPT-6 model
 
-<img src="images/art.png" width="300">
+<center><img src="images/art.png" width="300"></Center>
 
-Consider a **coffee shop owner** using an AI agent through OpenAI's API to analyze their sales data. Their question:
+Consider a **coffee shop owner** who tends to use AI agents through OpenAI's API to analyze their sales data and wants to know:
+
 - **How do the newly-released GPT-6 models (Luna, Sol) compare to Astra in terms of cost, correctness, latency, tool utilization, and token usage, under the specialized purpose of business analytics?**
-
-I've chronologically documented my process of answer this question, demonstrating how Phoenix greatly aids the process, while pointing out some challenges I've faced throughout. 
 
 ## 1. Designing the experiment
 
-One of my first **challenges** was in decomposing my proposed research question and designing an experiment to measure it. I began by asking:
+One of my first **challenges** was in decomposing this proposed research question, and designing an experiment to depict and measure it. I began by asking:
 
 ***What are we comparing?***
 
 The only independent variable in this experiment is the model itself (`gpt-6-luna`, `gpt-6-sol`, `gpt-6-astra`). For the sake of comparison, all other variables (reasoning effort, prompt, available tools) remain the same.
 
-***What are we measuring?*** Cost, correctness, latency, tools, tokens
+***What are we measuring?***: Cost, correctness, latency, tools, tokens.
 
 | Category | Metric (as revealed by Phoenix) | 
 | --- | --- |
@@ -33,38 +32,31 @@ The only independent variable in this experiment is the model itself (`gpt-6-lun
 | Tools Used | `span_kind = "TOOL"` |
 | Token Usage | `llm.token_count.prompt`, `llm.token_count.completion`, `llm.token_count.total` |
 
-***Where can I find accurate sales data for a coffee shop?***
+***Where can we find accurate sales data for a coffee shop?***
 
-Most of the datasets I found online were pretty dramatic in scope—either too specialized or too reduced. After speaking with someone involved in the coffee shop industry and understanding their general problem-space, I knew I wanted data rich enough for the agent to work with meaningfully, yet simple enough to not detract away from the demo's focus—showcasing Phoenix.
+Another problem was that most datasets I found online were quite dramatic in scope—either too specialized or too reduced. After speaking with someone involved in the coffee shop industry and understanding their general problem space, I desired data rich enough for the agent to work with meaningfully and relevantly, yet simple enough to not detract away from this demo's focus of Phoenix.
 
-I decided the cleanest approach here would be to devise my own mock dataset, containing 3 tables: `products`, `orders`, and `reviews`. In terms of generating reviews, this also provided me a nicely-contained environment to begin using OpenAI's API (which is essentially the core of this experiment). 
+The cleanest approach I decided on was to generate my own mock dataset, containing 3 tables: `products`, `orders`, and `reviews`. This provided me a nice warmup in integrating OpenAI's API into the project, as I used `gpt-5-nano` to generate reviews with natural language. 
 
-Inside `helpers/build_dataset.py`, I bulit a small helper script which allowed me to dynamically define a few products (e.g. Latte, Americano), and populate the table according to some variables I chose (order count, review count). 
+I also added some character to my data through fixed seeds, making certain products favor certain sentiments (review bias), making certain products more popular (log-normal weights for populating orders), and varying daily demand to simulate busier/quieter days.
 
-I realized quickly that the data needed some "shape" to it, and so rather than naively populating each table with random selections, I added just a hint of "flavor" to the data:
-- Fixed random seeds
-- Make certain products favor certain sentiments (a review bias)
-- Make certain products more popular (log-normal weights for populating orders)
-- Vary demand-per-day to simulate busier/quieter days
-- Balance review coverage independently of sales
+The full generation logic can be found in `helpers/build_dataset.py`.
 
-For the purpose of this demo, I generated a fairly-rich dataset for the agents to work with and extract meaningful insights from. 
-
-⭐️ *Specific details of the dataset generated for the agent will be described in the [2. Mock dataset](#2-mock-dataset) section.*
+⭐️ *Details of the specific dataset generated for the agent will be described in the [3. Providing the agent with data](#2-providing-the-agent-with-data) section.*
 
 ***What should the agent be evaluated on, and what defines correctness?***
 
-For evaluating correctness, **6 questions about sales data will be asked to the agent**. There will be 3 modes of difficulty (**easy, medium, hard**), with 2 questions asked per difficulty-level. Responses will be compared to expected output to evaluate correctness.
+For evaluating correctness, **6 questions about sales data will be asked to the agent**. There will be 3 modes of difficulty (**easy, medium, hard**), with 2 questions asked per difficulty-level, and the more difficult a question, the more reasoning I anticipate each will take. Responses will be compared to expected output to evaluate correctness.
 
-⭐️ *Full details about the questions asked will be explained in the [3. Evaluation questions](#3-evaluation-questions) section.*
+⭐️ *Details about the evaluation questions asked will be explained in the [3. Evaluation questions](#3-evaluation-questions) section.*
 
 ***What tools should the agents use?***
 
-For the available tools, I chose to be deliberately modest, because I was really interested in comparing how different models work with a limited set of tools. The agents only have two tools available to them:
-- `get_schema()`: returns a schema of the SQLite table, including columns/relationships
-- `run_sql(query)`: execute a read-only SQL query on the table, returns columns and rows.
+For the available tools, I chose to be deliberately modest, because I was really interested in comparing how different models work with a limited set of tools. The agents have two tools available to them:
+- `get_schema()`: return a schema of the SQLite table, including columns/relationships
+- `run_sql(query)`: execute a read-only SQL query on the table, return columns/rows.
 
-## 2. Mock dataset
+## 2. Providing the agent with data
 
 The dataset my agents will work with is stored in `store.sqlite`, with the following schema:
 
@@ -118,9 +110,9 @@ To simulate the demands of a business analyst's agentic workflow relative to our
 - 🟡 **medium:** more complex, perhaps involving joins/groups/filtering
 - 🔴 **hard:** combine sales and review aggregates with multiple conditions; may require more complex SQL, but not necessarily more tool calls
 
-## 4. Abstraction
+## 4. File structure
 
-Another **challenge** I faced at this stage was in architecting the actual project structure. Abstraction becomes fairly difficult when there is a lot of unknown, so I spent significant time understanding the dataflow and what my code needed to provide. I ended with the following structure, which felt very clean to work with, thus making data flow easy to reason about:
+Another **challenge** I faced was in architecting the actual project structure. Abstraction becomes hard when there is a lot of unknown, so I spent significant time understanding the dataflow and what my code needed to provide. I ended with the following structure, which felt clean to work with, thus making data flow easy to reason about:
 
 ```sh
 ├── data
@@ -141,21 +133,23 @@ Another **challenge** I faced at this stage was in architecting the actual proje
 └── pyproject.toml
 ```
 
-## 5. Incorporating Phoenix
+## 5. Phoenix enters the experiment
 
-While adding Phoenix, I realized quickly that the hard work was already done. [1. Designing the experiment](#1-designing-the-experiment) required some measured brainstorming, but at this point, everything was neatly modularized: `agent.py` was able to ask questions with designated models and return results, and `eval.py` was able to evaluate that agent's result for correctness. 
+Upon adding Phoenix, I realized quickly that the hard work had already been done. Designing the experiment, dataset, and evaluation questions required some measured brainstorming, but at this point, everything was neatly modularized: `agent.py` was able to answer questions with different OpenAI models and tools, and `eval.py` was able to evaluate that model's answer for correctness. 
 
-I further realized at this point there was an application for both domains of Phoenix's offerings: observability and evaluation.
+The exciting part: there was now a perfect application for both domains of Phoenix's offerings: observability and evaluation.
 
 **Observability**
 
-Traces provided everything I needed to know about the measurements I desired, such as cost, token usage, and tool call chain. Implementing this layer was much easier than expected: I simply created `tracing.py`, loosely following Arize's introductory documentation[[0]](#references). Afterwards, I only needed to wrap my `run_agent` in `@tracer.agent`, and my tool calls in `@tracer.tool`. 
+To add support for observability, I created `tracing.py` while referencing [Arize's Phoenix OTEL Reference](https://arize-phoenix.readthedocs.io/projects/otel/). Afterwards, I wrapped my agent with `@tracer.agent`, and my tools with `@tracer.tool`. Continuing the [Phoenix repository's installation process](https://github.com/arize-ai/phoenix#run-locally), I ran `phoenix serve` to fire up the frontend.
 
-I ran a small prompt, and Phoenix's frontend provided a vast amount of detail for the call, such as the entire tool chain. At this point, I was impressed.
+I ran a small prompt, and Phoenix's frontend provided a vast amount of detail for the inference, such as the entire tool chain, latency, and cost. At this point, I was impressed, because these traces provided everything I needed for the experiment, and implementing this layer was remarkably accessible. The amount of information available (such as seeing **Total tokens** for different stages) was very cool, and I spent a fair amount of time just exploring the UI. 
+
+<center><img src="images/trace.png" height="600"></center>
 
 **Evaluation**
 
-While I could use `eval.py` to write my own wrapper which groups experiments, iterates through models, asks questions, classifies correctness, groups traces, and much (much...) more, Phoenix's evaluation layer provided great simplicity.
+Phoenix's evaluation layer also provided a great deal of simplicity, as even the mere process of writing a wrapper around `eval.py` to iterate through models, collect traces, and group experiments would have been significant work.
 
 I composed an `experiment.py` file, and in under 50-lines I was able to import the `questions.json` as a dataset, name the experiment group, and use my already-created files to conduct the experiment. The output was elegant and succinct:
 
@@ -219,7 +213,7 @@ Something special about this experiment is that the models I was using had just 
 
 **Another challenge** I faced (as mentioned in [1. Designing the experiment](#1-designing-the-experiment)) follows by extension to the previous challenge: seeding that general question with specificity, and modeling the experimental space accordingly. I briefly chatted with someone who has worked in the coffee industry and asked questions which allowed me to form "axes" around a general manager's problem-space. I was able to extract certain characteristics of the problem-space, such as the importance of product popularity and the unpredictableness of customer flow, which I used to model my mock shop's data and questions more accurately. Decomposing my now-specific research question into its core experimental domains (shop data, importance of model choice, metrics to consider) required significant measured thought, but this preplanning is exactly what aided my project's workflow and allowed me to stage a reasonable PoC within the same day.
 
-**A third challenge** I faced was more general: meeting ambiguity with information; i.e. reducing the volume of perceived uncertainty. At the start of the day, Phoenix (as a tool), what a coffee shop sales analyst likely cares about, and the new OpenAI models were completely novel to me; by the end of the day, I understood Phoenix and its workflow reasonably well, and felt proficient at vouching for Phoenix's effectiveness towards ordinary developers when choosing between different models within the GPT-6 family, especially under a sales context. I systemize a lot of thought, which allows me to map knowledge (perhaps for general tasks like these) into its axiomatic domains, approaching each step iteratively and with intent. Realizing complexity is often times an illusion and that most pursuits can be broken down into a more axiomatic representation has been a superpower for me personally when it comes to learning new stuff—it makes the process exhilerating rather than draining, as I recognize the cognitive burn is what nurtures growth.
+**A third challenge** I faced was more general: meeting ambiguity with information; i.e. reducing the volume of perceived uncertainty. At the start of the day, Phoenix (as a tool), what a coffee shop sales analyst likely cares about, and the new OpenAI models were completely novel to me; by the end of the day, I understood Phoenix and its workflow reasonably well, and felt proficient at vouching for Phoenix's effectiveness towards ordinary developers when choosing between different models within the GPT-6 family, especially under a sales context. I systemize a lot of thought, which allows me to map knowledge (perhaps for general tasks like these) into its axiomatic domains, approaching each step iteratively and with intent. Realizing complexity is often times an illusion and that most pursuits can be broken down into a more axiomatic representation has been a superpower for me personally when it comes to learning new stuff—it makes the process exhilerating rather than draining, as I recognize the cognitive burn is what nurtures growth. 
 
 ***What can another developer learn from this?***
 
