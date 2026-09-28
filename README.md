@@ -4,7 +4,7 @@ As of September 22nd, OpenAI has expanded their GPT-6 family, [launching Luna an
 
 With such an expansion comes "the freedom of choice", and therefore, many will wonder which of the three models are right for them. Limited public information, generalized launch benchmarks, and varying usage costs are some factors which can make that decision hard.
 
-This problem illuminates Phoenix's value of allowing one to devise their own laboratory and compare models under their own specialized use-case. **My project models this problem, and demonstrates how Phoenix answers it.**
+This problem illuminates Phoenix's value of allowing one to devise their own laboratory and compare models under their own specialized use case. **My project models this problem and demonstrates how Phoenix answers it.**
 
 # Analyzing a coffee shop's sales to choose the right GPT-6 model
 
@@ -12,7 +12,7 @@ This problem illuminates Phoenix's value of allowing one to devise their own lab
 
 Consider a **coffee shop owner** who tends to use AI agents through OpenAI's API to analyze their sales data. They wish to know:
 
-- **How do the newly-released GPT-6 models (Luna, Sol) compare to Astra in terms of cost, correctness, latency, tool utilization, and token usage, under the specialized purpose of business analytics?**
+- **How do the newly released GPT-6 models (Luna, Sol) compare to Astra in terms of cost, correctness, latency, tool utilization, and token usage, under the specialized purpose of business analytics?**
 
 ## Table of Contents
 
@@ -66,7 +66,7 @@ For evaluating correctness, **6 questions about sales data will be posed to the 
 I figured it would be interesting to compare how efficient different models were with a limited set of tools, so I provided just two:
 
 - `get_schema()`: return a schema of the SQLite table, including columns/relationships
-- `run_sql(query)`: execute a read-only SQL query on the table, return columns/rows.
+- `run_sql(query)`: execute a read-only SQL query on the table and return columns/rows.
 
 ## 2. Agent's data
 
@@ -106,7 +106,7 @@ Each `(product, category, price)` entry below summarizes each product's generate
 
 ## 3. Evaluation questions
 
-To simulate the demands of a business analyst's agentic workflow, I've defined **6 total questions**, with **2 questions per each tier.** 
+To simulate the demands of a business analyst's agentic workflow, I've defined **6 total questions**, with **2 questions per tier.**
 
 ***Questions are tiered roughly to this scale:***
 
@@ -150,7 +150,7 @@ I kept the file structure modular to make it easy to reason about:
 ├── eval.py              # evaluate(result, expected)
 │
 ├── experiment.py        # runs Phoenix experiments across models
-├── tracing.py           # configues agent/tool tracing wrapepr
+├── tracing.py           # configures agent/tool tracing wrapper
 │
 └── pyproject.toml
 ```
@@ -163,7 +163,7 @@ The exciting part: there was now a perfect application for both domains of Phoen
 
 **Observability**
 
-To add support for observability, I created `tracing.py` while referencing [Arize's Phoenix OTEL Reference](https://arize-phoenix.readthedocs.io/projects/otel/). Afterwards, I wrapped my agent with `@tracer.agent`, and my tools with `@tracer.tool`. Continuing the [Phoenix repository's installation process](https://github.com/arize-ai/phoenix#run-locally), I ran `phoenix serve` to fire up the frontend. I also added Phoenix's [Remote MCP Server Endpoint](https://arize.com/docs/phoenix/integrations/remote-mcp#codex-openai) to my own coding agent.
+To add support for observability, I created `tracing.py` while referencing [Arize's Phoenix OTEL Reference](https://arize-phoenix.readthedocs.io/projects/otel/). Afterwards, I wrapped my agent with `@tracer.agent` and my tools with `@tracer.tool`. Continuing the [Phoenix repository's installation process](https://github.com/arize-ai/phoenix#run-locally), I ran `phoenix serve` to fire up the frontend. I also added Phoenix's [Remote MCP Server Endpoint](https://arize.com/docs/phoenix/integrations/remote-mcp#codex-openai) to my own coding agent.
 
 I ran a small prompt, and Phoenix's frontend depicted a vast amount of detail for the inference, such as the entire tool call chain, latency, and cost. These traces provided everything I needed for the experiment, and implementing this layer was remarkably accessible. The volume and granularity of available information (such as seeing **Total tokens** for intermediate stages) was quite cool. I spent a fair amount of time just exploring the UI: 
 
@@ -171,24 +171,24 @@ I ran a small prompt, and Phoenix's frontend depicted a vast amount of detail fo
 
 **Evaluation**
 
-Implementing Phoenix's evaluation into my project was likewise accessible, and very valuable (as even writing a wrapper around `eval.py` to iterate through models and group experiments would have taken significant time).
+Implementing Phoenix's evaluation into my project was likewise accessible and very valuable (as even writing a wrapper around `eval.py` to iterate through models and group experiments would have taken significant time).
 
 I composed `experiment.py` by referencing Phoenix's API documentation for [experiments](https://arize-phoenix.readthedocs.io/projects/client/api/experiments.html) and [datasets](https://arize-phoenix.readthedocs.io/projects/client/api/datasets.html) with some help from the MCP, using `questions.json` as an experiment dataset. The output was elegant and succinct:
 
 ![](./images/output.png)
 
-My `experiment.py` was able to define a dataset name, and run, evaluate, and log experiments dynamically for each model that is passed in as a command-line argument:
+My `experiment.py` was able to define a dataset name and run, evaluate, and log experiments dynamically for each model that is passed in as a command-line argument:
 
 ```sh
 # run experiments for all three gpt-6 models
 python experiment.py --models gpt-6-luna gpt-6-sol gpt-6-astra
 
-# or for each gpt-6 model, individiually
+# or for each gpt-6 model, individually
 python experiment.py --models gpt-6-luna
 python experiment.py --models gpt-6-sol
 python experiment.py --models gpt-6-astra
 
-# or for other any OpenAI api model! 🙂
+# or for other compatible OpenAI API models! 🙂
 python experiment.py --models gpt-5.6-sol 
 python experiment.py --models gpt-5-nano
 ```
@@ -224,7 +224,7 @@ The `coffee-shop-final-experiment` dataset contained the three experiments, and 
 > USD per 1M tokens, Standard tier, short context
 
 
-What stood out to me was how little the extra spending justified this particular set of questions, because each model was able to answer all 6 questions correctly.
+What stood out to me was how little this particular set of questions justified the extra spending, because each model was able to answer all 6 questions correctly.
 
 **Luna's** total cost was roughly 94 times lower than **Astra's**, despite using slightly more tokens, which matches OpenAI's token usage cost for the GPT-6 family. Interestingly, **Sol** had the lowest average latency, though only about 0.4 seconds faster than **Luna**. 
 
@@ -238,17 +238,17 @@ For this coffee shop, **Luna** provides immense cost-saving value in performing 
 
 ***What did the results teach me?***
 
-- It can often be deceptive how much reasoning (or lack thereof) is required for a task. I've observed in my own social circles that we tend to overestimate how much reasoning our tasks demand, and consequently feel pressured to choose the most expensive model. 
-- As the show, sometimes smaller models can effortlessly tackle the same tasks as larger models. 
+- It can often be deceptive how much reasoning (or lack thereof) is required for a task. I've observed in my own social circles that we tend to overestimate how much reasoning our tasks demand and consequently feel pressured to choose the most expensive model.
+- As the results show, sometimes smaller models can effortlessly tackle the same tasks as larger models.
 - Designing trickier questions would be insightful towards finding that "reasoning boundary" between different model suites.
 
 ***What did I learn about Phoenix, and what can another developer learn from it?***
 
 - I learned that Phoenix *greatly* simplifies tasks which would otherwise be significantly demanding and that it's very accessible—and I'd like for developers to know about that. Because it's adaptable to one's subjective needs, it provides personalized insight that no launch benchmark can.
 
-- Phoenix's tutorial documentation is simple and accessible. Therefore, implementing it into my project, along with its MCP server, was very streamlined. It's very easy to vouch honestly about just *how much* its services assist an ordinary developer. 
+- Phoenix's tutorial documentation is simple and accessible. Therefore, implementing it into my project, along with its MCP server, was very streamlined. It's very easy to vouch honestly for just *how much* its services assist an ordinary developer.
 
-- Something noteworthy: Luna and Sol had just come out the day *of*. The only compatability step for me was importing the model's API cost into Phoenix. This adaptability makes the tool very powerful in this field, because change is so imminent. 
+- Something noteworthy: Luna and Sol had just come out the day *of*. The only compatibility step for me was importing the models' API costs into Phoenix. This adaptability makes the tool very powerful in this field, because change is so imminent.
 
 ***What are some challenges I faced, and how did I approach them?***
 
@@ -260,4 +260,4 @@ For this coffee shop, **Luna** provides immense cost-saving value in performing 
 
 # Closure
 
-Thank you **Arize** for the opportunity to complete this project! It was very fun. :)
+Thank you, **Arize**, for the opportunity to complete this project! It was very fun. :)
