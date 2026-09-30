@@ -21,7 +21,7 @@ I'll walk through how I approached this question, from designing the experiment 
 - [1. Designing the experiment](#1-designing-the-experiment)
 - [2. Agent's data](#2-agents-data)
 - [3. Evaluation questions](#3-evaluation-questions)
-- [4. File structure](#4-file-structure)
+- [4. File structure and setup](#4-file-structure-and-setup)
 - [5. Phoenix](#5-phoenix)
 - [6. Results](#6-results)
 - [7. Reflection](#7-reflection)
@@ -132,7 +132,7 @@ To simulate the demands of a business analyst's agentic workflow, I've defined *
 > Questions with multiple components will be answered by agents in JSON format. Parsing logic can be found in `eval.py`.
 
 
-## 4. File structure
+## 4. File structure and setup
 
 I kept the file structure modular to make it easy to reason about:
 
@@ -154,6 +154,25 @@ I kept the file structure modular to make it easy to reason about:
 │
 └── pyproject.toml
 ```
+
+**Quick setup** (macOS/Linux, from the repo root):
+
+```sh
+python3 -m venv .venv
+source .venv/bin/activate
+pip install openai python-dotenv arize-phoenix arize-phoenix-otel openinference-instrumentation-openai
+```
+
+Create a `.env` file with `OPENAI_API_KEY=your_api_key`. The dataset is already included.
+
+Run `phoenix serve`, then in a second terminal from the repo root:
+
+```sh
+source .venv/bin/activate
+python experiment.py --models gpt-6-luna gpt-6-sol gpt-6-astra
+```
+
+View the experiments at [localhost:6006](http://localhost:6006).
 
 ## 5. Phoenix
 
