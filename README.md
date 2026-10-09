@@ -276,7 +276,3 @@ For this coffee shop, **Luna** provides immense cost-saving value in performing 
 - **Another challenge** I faced follows by extension to the previous challenge: seeding that general question with specificity, and modeling it accurately. I briefly chatted with someone who worked in the coffee industry and asked questions which allowed me to form "axes" around an analyst's problem space. I learned about the importance of product popularity and the unpredictableness of customer flow, which made modeling my agent's data more exciting and accurate. 
 
 - **A third challenge** I faced was more general: tackling ambiguity. At the start of the day, Phoenix (as a tool), the new OpenAI models and what questions they create, and what a sales analyst looks for were all novel domains to me. By the end of the day, I felt confident using Phoenix as a tool to assist with my workflow and vouch for its effectiveness, while being able to compare GPT-6 models under the simulated environment of a coffee shop owner. Breaking tasks down into their core domains and tackling each independently allows me to reduce complexity significantly, greatly assisting me in learning new topics such as these.
-
-# Closure
-
-Thank you, **Arize**, for the opportunity to complete this project! It was very fun. :)
